@@ -59,6 +59,17 @@ fn main() {
             include_dirs.push(include_dir);
         }
     }
+    if target.contains("wasm") {
+        include_dirs.extend([
+            PathBuf::from(
+                env::var("EMSDK").expect("EMSDK is not set")
+                    + "/upstream/emscripten/cache/sysroot/include/c++/v1",
+            ),
+            PathBuf::from(
+                env::var("EMSDK").unwrap() + "/upstream/emscripten/cache/sysroot/include",
+            ),
+        ]);
+    }
 
     let dst_dir = cmake_conf.build();
     let lib_dir = dst_dir.join("lib");
@@ -86,6 +97,7 @@ fn generate_bindings(
         .map(|dir| format!("-I{}", dir.as_ref().to_str().unwrap()))
         .chain([format!("-I{}", include_dir.to_str().unwrap())])
         .collect::<Vec<_>>();
+    println!("cargo:rerun-if-changed=build.rs");
     println!("cargo:rerun-if-changed=wrapper.hpp");
     println!("cargo:rerun-if-changed=src/generated/bindings.rs");
     let mut bind_builder = bindgen::Builder::default()
